@@ -11,8 +11,14 @@ indent_size = 2
 [*.go]
 indent_style = tab
 
-[*.{py,java}]
+[*.py]
 indent_size = 4
+
+# Java uses 2-space per Google Java Style (enforced by spotless +
+# checkstyle in the Java profile). PRs that change this should also flip
+# spotless's googleJavaFormat <style> and checkstyle's config to AOSP.
+[*.java]
+indent_size = 2
 
 [Makefile]
 indent_style = tab
