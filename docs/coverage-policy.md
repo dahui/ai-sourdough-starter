@@ -26,7 +26,7 @@ honest team honest, not to substitute for code review.
 | Go          | `go test -coverprofile` + `scripts/check-coverage.sh` | Script parses `go tool cover -func`, fails if total <85% |
 | Python      | `pytest-cov`                                  | `pytest --cov-fail-under=85` (built-in)         |
 | NodeJS-TS   | `vitest --coverage` + `c8`                    | `c8 --lines=85 --check-coverage`                |
-| Java        | Maven + jacoco                                | `<minimum>0.85</minimum>` in jacoco plugin config |
+| Java        | Maven + jacoco                                | `<minimum>0.85</minimum>` on `INSTRUCTION` counter in jacoco plugin config |
 
 All profiles' CI workflows run the coverage gate *after* tests. A test
 failure short-circuits the build before coverage is checked.
@@ -49,11 +49,11 @@ configuration. Document the change in an ADR.
 Generated code, mocks, and `main` functions are excluded from coverage in
 each profile's gate script:
 
-- Go: paths matching `/mock_`, `_mock.go`, `.pb.go`, `_generated.go`
+- Go: paths matching `/mock_`, `_mock.go`, `.pb.go`, `_generated.go`, `/main.go`
 - Python: `# pragma: no cover` markers + `tool.coverage.run.omit` in
   `pyproject.toml`
 - TS: `c8.exclude` patterns in `package.json`
-- Java: jacoco `<excludes>` patterns in `pom.xml`
+- Java: jacoco `<excludes>` patterns in `pom.xml` (default: `**/App.class`)
 
 If you add a generated-code path to your project, extend the relevant
 exclude list.

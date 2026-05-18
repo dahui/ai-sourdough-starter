@@ -20,6 +20,12 @@ EXCLUDE_PATTERNS=(
   '_mock\.go'
   '\.pb\.go'
   '_generated\.go'
+  # main.go is excluded by convention: entry-point code (signal handling,
+  # logger setup, env parsing) is integration-tested via the binary, not
+  # unit-tested. Move testable logic into internal/ packages instead and
+  # cover it there. Remove this exclusion if your project's main.go has
+  # non-trivial logic you want gated.
+  '/main\.go:'
 )
 
 if [[ ! -f "$COVER_FILE" ]]; then

@@ -49,6 +49,21 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco.version}</version>
+                <!--
+                  Excludes apply to all goals (instrumentation, report,
+                  check). App.class is the entry-point holder (main); it's
+                  integration-tested via the built jar, not unit-tested,
+                  so exclude it to keep the coverage gate honest. Move
+                  testable logic out of App into a separate class and
+                  cover it there. Add other patterns here for generated
+                  code (e.g. protobuf, MapStruct).
+                -->
+                <configuration>
+                    <excludes>
+                        <exclude>**/App.class</exclude>
+                        <exclude>**/App$*.class</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
                     <execution>
                         <id>prepare-agent</id>
@@ -64,12 +79,22 @@
                         <phase>verify</phase>
                         <goals><goal>check</goal></goals>
                         <configuration>
+                            <!--
+                              INSTRUCTION is jacoco's recommended counter
+                              and handles JVM idioms (implicit default
+                              constructors, switch tableswitches, etc.)
+                              more accurately than LINE. The other
+                              profiles use line coverage; for Java,
+                              instruction coverage is the idiomatic
+                              jacoco default and avoids penalizing
+                              standard utility-class patterns.
+                            -->
                             <rules>
                                 <rule>
                                     <element>BUNDLE</element>
                                     <limits>
                                         <limit>
-                                            <counter>LINE</counter>
+                                            <counter>INSTRUCTION</counter>
                                             <value>COVEREDRATIO</value>
                                             <minimum>${coverage.minimum}</minimum>
                                         </limit>
