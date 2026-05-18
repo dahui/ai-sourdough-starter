@@ -5,6 +5,13 @@ on:
     tags:
       - 'v*.*.*'
 
+# Why no conventional-changelog step: TriPSs/conventional-changelog-action
+# runs `git pull --tags --ff-only` at startup, which refuses on tag-push
+# events because the local tag would be "clobbered" by the remote tag of
+# the same name. softprops/action-gh-release with generate_release_notes
+# uses GitHub's native API and works correctly when triggered by a tag
+# push. See plans/fix-release-workflow-tag-conflict.md.
+
 permissions:
   contents: write
 
@@ -17,20 +24,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: generate changelog
-        id: changelog
-        uses: TriPSs/conventional-changelog-action@v5
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          output-file: CHANGELOG.md
-          skip-version-file: true
-          skip-commit: true
-          skip-tag: true
-
       - name: create GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          body: ${{ steps.changelog.outputs.clean_changelog }}
           generate_release_notes: true
           draft: false
           prerelease: ${{ contains(github.ref, '-') }}
