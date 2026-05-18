@@ -8,7 +8,7 @@ from {{ python_module }}.hello import greet
 
 
 def main() -> int:
-    print(greet("world"))  # noqa: T201 -- intentional entry-point output
+    print(greet("world"))
     return 0
 
 
