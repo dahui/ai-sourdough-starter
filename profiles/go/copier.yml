@@ -1,0 +1,86 @@
+# Copier configuration for the Go profile.
+#
+# Invoke from anywhere; specify the destination directory:
+#   copier copy --trust -a profiles/go gh:USER/ai-sourdough-starter ./my-project
+#
+# Or from a local clone of the starter:
+#   copier copy --trust -a profiles/go /path/to/ai-sourdough-starter ./my-project
+#
+# Or via cookiecutter for compatibility:
+#   cookiecutter gh:USER/ai-sourdough-starter --directory=profiles/go
+
+_min_copier_version: "9.2.0"
+_answers_file: ".copier-answers.yml"
+# No _templates_suffix: every file in {{ project_slug }}/ gets rendered.
+# Files containing literal Jinja-conflicting syntax (Go text/template,
+# JSON Schema with {{ }}) should wrap that content in {% raw %} blocks.
+
+# Files outside the template tree (questions config, post-gen scripts).
+_exclude:
+  - "copier.yml"
+  - "cookiecutter.json"
+  - "hooks/"
+  - "README.md"
+
+# ----- Questions -----
+
+project_name:
+  type: str
+  help: Human-readable project name (e.g. "Order Service")
+
+project_slug:
+  type: str
+  help: "kebab-case directory and binary name"
+  default: "{{ project_name | lower | replace(' ', '-') | replace('_', '-') }}"
+  validator: >-
+    {% if not (project_slug | regex_search('^[a-z][a-z0-9-]*$')) %}
+    Must be lowercase, start with a letter, contain only a-z 0-9 and hyphens
+    {% endif %}
+
+module_path:
+  type: str
+  help: 'Go module path (e.g. "github.com/yourorg/order-service")'
+  validator: >-
+    {% if not (module_path | regex_search('^[a-z0-9.-]+(/[a-zA-Z0-9._-]+)+$')) %}
+    Must look like a Go module path (e.g. github.com/org/name)
+    {% endif %}
+
+project_description:
+  type: str
+  help: One-line description
+  default: "A Go service bootstrapped from ai-sourdough-starter"
+
+copyright_holder:
+  type: str
+  help: Name for LICENSE
+  default: "{{ project_name }} contributors"
+
+license:
+  type: str
+  help: License to ship
+  choices: [MIT, Apache-2.0, none]
+  default: MIT
+
+go_version:
+  type: str
+  help: Go toolchain version (must be installed locally)
+  default: "1.23"
+
+starter_version:
+  type: str
+  default: "0.1.0"
+  when: false
+
+profile:
+  type: str
+  default: "go"
+  when: false
+
+# ----- Post-generation tasks -----
+
+_tasks:
+  - "chmod +x {{ _copier_conf.dst_path }}/.claude/hooks/*.sh"
+  - "chmod +x {{ _copier_conf.dst_path }}/scripts/check-coverage.sh"
+  - command: "git init -q && git add ."
+    working_directory: "{{ _copier_conf.dst_path }}"
+    when: "{{ not (_copier_conf.dst_path + '/.git') | exists }}"

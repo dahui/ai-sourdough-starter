@@ -1,0 +1,16 @@
+* text=auto eol=lf
+
+# Binaries
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.tar binary
+
+# Generated files — show in diffs but no blame noise
+.claude/commands/* linguist-generated=true
+.clinerules/workflows/* linguist-generated=true

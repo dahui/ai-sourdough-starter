@@ -1,0 +1,49 @@
+# OS detritus
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment / secrets — never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+id_rsa*
+credentials.json
+credentials.yaml
+credentials.yml
+
+# Build / dist directories (language-specific entries appended by profile)
+dist/
+build/
+out/
+target/
+coverage/
+*.log
+
+# Starter manifest stays committed — but ad-hoc renders should not
+.copier-answers.yml.tmp
+
+# Node / pnpm / TypeScript
+node_modules/
+pnpm-debug.log*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.tsbuildinfo
+.pnpm-store/
+.cache/
+*.log
+
+# Build output
+dist/
+*.d.ts.map
+*.js.map

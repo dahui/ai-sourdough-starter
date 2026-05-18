@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+# sync-commands — render canonical slash commands into tool-specific locations
+#
+# Sources:  agent-shared/commands/*.md  (each with YAML frontmatter)
+# Targets:
+#   .claude/commands/<name>.md       (frontmatter preserved — Claude Code reads it)
+#   .clinerules/workflows/<name>.md  (frontmatter stripped — Cline workflow body only)
+#
+# Idempotent. Safe to re-run. Writes a sidecar `.synced.sha256` next to each
+# generated file so future runs can detect manual edits before clobbering.
+
+set -euo pipefail
+
+# Resolve repo root: directory containing this script's parent
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+CANONICAL_DIR="$REPO_ROOT/agent-shared/commands"
+CLAUDE_OUT="$REPO_ROOT/.claude/commands"
+CLINE_OUT="$REPO_ROOT/.clinerules/workflows"
+
+if [[ ! -d "$CANONICAL_DIR" ]]; then
+  echo "sync-commands: missing canonical source: $CANONICAL_DIR" >&2
+  exit 1
+fi
+
+mkdir -p "$CLAUDE_OUT" "$CLINE_OUT"
+
+# Detect manual edits: if a target file's sha256 doesn't match its
+# .synced.sha256 sidecar, warn and skip (don't clobber user work).
+check_drift() {
+  local target="$1"
+  local sidecar="${target}.synced.sha256"
+  if [[ -f "$target" && -f "$sidecar" ]]; then
+    local actual
+    actual=$(shasum -a 256 "$target" | awk '{print $1}')
+    local recorded
+    recorded=$(cat "$sidecar")
+    if [[ "$actual" != "$recorded" ]]; then
+      echo "sync-commands: DRIFT in $target" >&2
+      echo "  This file was edited after the last sync. Refusing to overwrite." >&2
+      echo "  Either: (a) copy your changes into agent-shared/commands/ and re-run," >&2
+      echo "          (b) delete $sidecar to force overwrite." >&2
+      return 1
+    fi
+  fi
+  return 0
+}
+
+write_with_sidecar() {
+  local target="$1"
+  local content="$2"
+  printf '%s' "$content" > "$target"
+  shasum -a 256 "$target" | awk '{print $1}' > "${target}.synced.sha256"
+}
+
+# Strip leading YAML frontmatter block (lines between two `---` lines at
+# the start of the file). awk-based to avoid sed portability issues.
+strip_frontmatter() {
+  awk '
+    BEGIN { in_fm = 0; passed_fm = 0 }
+    NR == 1 && /^---$/ { in_fm = 1; next }
+    in_fm && /^---$/ { in_fm = 0; passed_fm = 1; next }
+    in_fm { next }
+    { if (!passed_fm && /^$/) next; passed_fm = 1; print }
+  ' "$1"
+}
+
+count=0
+errors=0
+
+for src in "$CANONICAL_DIR"/*.md; do
+  [[ -e "$src" ]] || continue
+  name=$(basename "$src")
+
+  claude_target="$CLAUDE_OUT/$name"
+  cline_target="$CLINE_OUT/$name"
+
+  # Drift check; skip both targets if either has drift to keep them in sync
+  if ! check_drift "$claude_target" || ! check_drift "$cline_target"; then
+    errors=$((errors + 1))
+    continue
+  fi
+
+  # Claude Code: full content (frontmatter preserved)
+  write_with_sidecar "$claude_target" "$(cat "$src")"
+
+  # Cline: body only (frontmatter stripped)
+  write_with_sidecar "$cline_target" "$(strip_frontmatter "$src")"
+
+  count=$((count + 1))
+  echo "synced: $name"
+done
+
+if [[ "$errors" -gt 0 ]]; then
+  echo "" >&2
+  echo "sync-commands: $errors file(s) skipped due to drift. See messages above." >&2
+  exit 1
+fi
+
+echo ""
+echo "sync-commands: $count command(s) synced into .claude/commands/ and .clinerules/workflows/"

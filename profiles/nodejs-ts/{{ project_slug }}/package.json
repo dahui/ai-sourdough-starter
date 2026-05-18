@@ -1,0 +1,42 @@
+{
+  "name": "{% if npm_scope %}{{ npm_scope }}/{% endif %}{{ project_slug }}",
+  "version": "0.1.0",
+  "description": "{{ project_description }}",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "engines": {
+    "node": ">={{ node_version }}.0.0"
+  },
+  "packageManager": "pnpm@{{ pnpm_version }}",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "check": "biome check .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "audit": "pnpm audit --audit-level=high --prod",
+    "ship-check": "pnpm typecheck && pnpm lint && pnpm coverage && pnpm audit"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "@types/node": "^{{ node_version }}.0.0",
+    "@vitest/coverage-v8": "^2.1.1",
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.1"
+  },
+  "license": "{{ license }}"
+}

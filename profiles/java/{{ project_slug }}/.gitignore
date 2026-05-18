@@ -1,0 +1,47 @@
+# OS detritus
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment / secrets — never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+id_rsa*
+credentials.json
+credentials.yaml
+credentials.yml
+
+# Build / dist directories (language-specific entries appended by profile)
+dist/
+build/
+out/
+target/
+coverage/
+*.log
+
+# Starter manifest stays committed — but ad-hoc renders should not
+.copier-answers.yml.tmp
+
+# Java / Maven
+*.class
+*.jar
+*.war
+*.ear
+*.iml
+hs_err_pid*
+.gradle/
+target/
+build/
+dependency-reduced-pom.xml
+dependency-check-report*
+.mvn/wrapper/maven-wrapper.jar

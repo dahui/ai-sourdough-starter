@@ -1,0 +1,77 @@
+_min_copier_version: "9.2.0"
+_answers_file: ".copier-answers.yml"
+
+_exclude:
+  - "copier.yml"
+  - "cookiecutter.json"
+  - "hooks/"
+  - "README.md"
+
+# ----- Questions -----
+
+project_name:
+  type: str
+  help: 'Human-readable project name (e.g. "Order Service")'
+
+project_slug:
+  type: str
+  help: "kebab-case directory and artifact name"
+  default: "{{ project_name | lower | replace(' ', '-') | replace('_', '-') }}"
+  validator: >-
+    {% if not (project_slug | regex_search('^[a-z][a-z0-9-]*$')) %}
+    Must be lowercase, start with a letter, contain only a-z 0-9 and hyphens
+    {% endif %}
+
+java_group_id:
+  type: str
+  help: 'Maven groupId (e.g. "com.example")'
+  default: "com.example"
+
+java_package:
+  type: str
+  help: 'Root Java package (e.g. "com.example.orderservice")'
+  default: "{{ java_group_id }}.{{ project_slug | replace('-', '') }}"
+  validator: >-
+    {% if not (java_package | regex_search('^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*$')) %}
+    Must be a valid Java package (lowercase segments separated by dots)
+    {% endif %}
+
+project_description:
+  type: str
+  help: One-line description
+  default: "A Java service bootstrapped from ai-sourdough-starter"
+
+copyright_holder:
+  type: str
+  help: Name for LICENSE
+  default: "{{ project_name }} contributors"
+
+license:
+  type: str
+  help: License to ship
+  choices: [MIT, Apache-2.0, none]
+  default: MIT
+
+java_version:
+  type: str
+  help: Java LTS version
+  choices: ["21", "17"]
+  default: "21"
+
+starter_version:
+  type: str
+  default: "0.1.0"
+  when: false
+
+profile:
+  type: str
+  default: "java"
+  when: false
+
+# ----- Post-generation tasks -----
+
+_tasks:
+  - "chmod +x {{ _copier_conf.dst_path }}/.claude/hooks/*.sh"
+  - command: "git init -q && git add ."
+    working_directory: "{{ _copier_conf.dst_path }}"
+    when: "{{ not (_copier_conf.dst_path + '/.git') | exists }}"

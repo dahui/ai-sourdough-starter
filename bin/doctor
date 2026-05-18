@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+# doctor — verify install integrity of an ai-sourdough-starter project (or
+# the starter repo itself). Prints a checklist; exits non-zero on any
+# failure.
+#
+# Usage:  bin/doctor               # check current directory
+#         bin/doctor /path/to/dir  # check specified directory
+
+set -uo pipefail
+
+TARGET="${1:-$PWD}"
+cd "$TARGET" || { echo "doctor: cannot enter $TARGET" >&2; exit 1; }
+
+PASS=0
+FAIL=0
+WARN=0
+
+check() {
+  local label="$1"; shift
+  if "$@" >/dev/null 2>&1; then
+    printf '  \033[32mOK\033[0m   %s\n' "$label"
+    PASS=$((PASS + 1))
+  else
+    printf '  \033[31mFAIL\033[0m %s\n' "$label"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
+warn() {
+  local label="$1"
+  printf '  \033[33mWARN\033[0m %s\n' "$label"
+  WARN=$((WARN + 1))
+}
+
+info() {
+  printf '       %s\n' "$1"
+}
+
+echo "ai-sourdough-starter — doctor"
+echo "  target: $TARGET"
+echo ""
+
+# ----- Required system tools -----
+echo "[system tools]"
+check "jq present (required by hooks)" command -v jq
+check "git present" command -v git
+check "shasum present (required by bin/sync-commands)" command -v shasum
+echo ""
+
+# ----- Core files -----
+echo "[core files]"
+check "AGENTS.md exists" test -f AGENTS.md
+check "CLAUDE.md exists" test -f CLAUDE.md
+check "CLAUDE.md imports AGENTS.md" grep -qE '^@AGENTS\.md' CLAUDE.md
+check ".clinerules/ directory exists" test -d .clinerules
+echo ""
+
+# ----- Hooks -----
+echo "[hooks]"
+check ".claude/settings.json exists" test -f .claude/settings.json
+check ".claude/hooks/ exists" test -d .claude/hooks
+if [[ -d .claude/hooks ]]; then
+  for hook in require-plan.sh require-plan-bash.sh block-secrets.sh post-edit-format.sh stop-lint.sh; do
+    if [[ -f ".claude/hooks/$hook" ]]; then
+      check "$hook is executable" test -x ".claude/hooks/$hook"
+    fi
+  done
+fi
+echo ""
+
+# ----- Slash commands -----
+echo "[slash commands]"
+check ".claude/commands/ exists" test -d .claude/commands
+check ".clinerules/workflows/ exists" test -d .clinerules/workflows
+if [[ -d .claude/commands && -d .clinerules/workflows ]]; then
+  CLAUDE_COUNT=$(find .claude/commands -maxdepth 1 -name '*.md' | wc -l | tr -d ' ')
+  CLINE_COUNT=$(find .clinerules/workflows -maxdepth 1 -name '*.md' | wc -l | tr -d ' ')
+  if [[ "$CLAUDE_COUNT" -eq "$CLINE_COUNT" && "$CLAUDE_COUNT" -gt 0 ]]; then
+    printf '  \033[32mOK\033[0m   %s\n' "command count matches Cline workflow count ($CLAUDE_COUNT)"
+    PASS=$((PASS + 1))
+  else
+    printf '  \033[31mFAIL\033[0m claude commands ($CLAUDE_COUNT) != cline workflows ($CLINE_COUNT)\n'
+    FAIL=$((FAIL + 1))
+  fi
+fi
+echo ""
+
+# ----- Plans -----
+echo "[plans]"
+check "/plans/ directory exists" test -d plans
+check "/plans/_template.md exists" test -f plans/_template.md
+if [[ -f plans/_unblock ]]; then
+  warn "/plans/_unblock is present (plan-gate is bypassed)"
+  info "  Remove it after the trivial edit: rm plans/_unblock"
+fi
+echo ""
+
+# ----- Profile manifest (rendered projects only) -----
+if [[ -f .starter-manifest.json ]]; then
+  echo "[profile manifest]"
+  VERSION=$(jq -r '.starter_version // empty' .starter-manifest.json 2>/dev/null || true)
+  PROFILE=$(jq -r '.profile // empty' .starter-manifest.json 2>/dev/null || true)
+  info "starter version: ${VERSION:-unknown}"
+  info "profile:         ${PROFILE:-unknown}"
+  echo ""
+fi
+
+# ----- Starter-repo-specific checks -----
+if [[ -d agent-shared/commands ]]; then
+  echo "[starter-repo self-checks]"
+  check "bin/sync-commands exists and executable" test -x bin/sync-commands
+  check "agent-shared/commands/ has files" find agent-shared/commands -maxdepth 1 -name '*.md' -print -quit
+  if [[ -x bin/sync-commands ]]; then
+    if bin/sync-commands >/dev/null 2>&1; then
+      if [[ -z "$(git status --porcelain .claude/commands .clinerules/workflows 2>/dev/null)" ]]; then
+        printf '  \033[32mOK\033[0m   %s\n' "sync-commands produces no drift"
+        PASS=$((PASS + 1))
+      else
+        printf '  \033[31mFAIL\033[0m sync-commands produces uncommitted drift\n'
+        FAIL=$((FAIL + 1))
+        info "  Run: bin/sync-commands && git add .claude/commands .clinerules/workflows"
+      fi
+    else
+      printf '  \033[31mFAIL\033[0m sync-commands exited non-zero\n'
+      FAIL=$((FAIL + 1))
+    fi
+  fi
+  echo ""
+fi
+
+# ----- Summary -----
+echo "—————"
+TOTAL=$((PASS + FAIL))
+printf 'pass: %d / %d   warn: %d\n' "$PASS" "$TOTAL" "$WARN"
+if [[ "$FAIL" -gt 0 ]]; then
+  echo "doctor: FAIL — fix the items above and re-run."
+  exit 1
+fi
+echo "doctor: OK"
+exit 0

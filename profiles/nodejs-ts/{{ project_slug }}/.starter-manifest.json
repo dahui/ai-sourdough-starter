@@ -1,0 +1,9 @@
+{
+  "starter_version": "{{ starter_version }}",
+  "profile": "{{ profile }}",
+  "project_name": "{{ project_name }}",
+  "project_slug": "{{ project_slug }}",
+  "npm_scope": "{{ npm_scope }}",
+  "node_version": "{{ node_version }}",
+  "pnpm_version": "{{ pnpm_version }}"
+}

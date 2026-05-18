@@ -1,0 +1,72 @@
+_min_copier_version: "9.2.0"
+_answers_file: ".copier-answers.yml"
+
+_exclude:
+  - "copier.yml"
+  - "cookiecutter.json"
+  - "hooks/"
+  - "README.md"
+
+# ----- Questions -----
+
+project_name:
+  type: str
+  help: 'Human-readable project name'
+
+project_slug:
+  type: str
+  help: "kebab-case directory name"
+  default: "{{ project_name | lower | replace(' ', '-') | replace('_', '-') }}"
+  validator: >-
+    {% if not (project_slug | regex_search('^[a-z][a-z0-9-]*$')) %}
+    Must be lowercase, start with a letter, contain only a-z 0-9 and hyphens
+    {% endif %}
+
+python_module:
+  type: str
+  help: 'Python module name (snake_case)'
+  default: "{{ project_slug | replace('-', '_') }}"
+  validator: >-
+    {% if not (python_module | regex_search('^[a-z][a-z0-9_]*$')) %}
+    Must be lowercase, start with a letter, contain only a-z 0-9 and underscores
+    {% endif %}
+
+project_description:
+  type: str
+  help: One-line description
+  default: "A Python service bootstrapped from ai-sourdough-starter"
+
+copyright_holder:
+  type: str
+  help: Name for LICENSE
+  default: "{{ project_name }} contributors"
+
+license:
+  type: str
+  help: License to ship
+  choices: [MIT, Apache-2.0, none]
+  default: MIT
+
+python_version:
+  type: str
+  help: Python minor version
+  choices: ["3.12", "3.13"]
+  default: "3.12"
+
+starter_version:
+  type: str
+  default: "0.1.0"
+  when: false
+
+profile:
+  type: str
+  default: "python"
+  when: false
+
+# ----- Post-generation tasks -----
+
+_tasks:
+  - "chmod +x {{ _copier_conf.dst_path }}/.claude/hooks/*.sh"
+  - command: "git init -q && git add ."
+    working_directory: "{{ _copier_conf.dst_path }}"
+    when: "{{ not (_copier_conf.dst_path + '/.git') | exists }}"

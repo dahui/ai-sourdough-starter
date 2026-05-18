@@ -1,0 +1,14 @@
+{
+  "project_name": "Order Service",
+  "project_slug": "{{ cookiecutter.project_name|lower|replace(' ', '-')|replace('_', '-') }}",
+  "module_path": "github.com/example/{{ cookiecutter.project_slug }}",
+  "project_description": "A Go service bootstrapped from ai-sourdough-starter",
+  "copyright_holder": "{{ cookiecutter.project_name }} contributors",
+  "license": ["MIT", "Apache-2.0", "none"],
+  "go_version": "1.23",
+  "starter_version": "0.1.0",
+  "profile": "go",
+  "_copy_without_render": [
+    ".github/workflows/*.yml"
+  ]
+}

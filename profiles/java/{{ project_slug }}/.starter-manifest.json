@@ -1,0 +1,9 @@
+{
+  "starter_version": "{{ starter_version }}",
+  "profile": "{{ profile }}",
+  "project_name": "{{ project_name }}",
+  "project_slug": "{{ project_slug }}",
+  "java_group_id": "{{ java_group_id }}",
+  "java_package": "{{ java_package }}",
+  "java_version": "{{ java_version }}"
+}

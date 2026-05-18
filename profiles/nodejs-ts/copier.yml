@@ -1,0 +1,73 @@
+_min_copier_version: "9.2.0"
+_answers_file: ".copier-answers.yml"
+
+_exclude:
+  - "copier.yml"
+  - "cookiecutter.json"
+  - "hooks/"
+  - "README.md"
+
+# ----- Questions -----
+
+project_name:
+  type: str
+  help: 'Human-readable project name'
+
+project_slug:
+  type: str
+  help: "kebab-case package name"
+  default: "{{ project_name | lower | replace(' ', '-') | replace('_', '-') }}"
+  validator: >-
+    {% if not (project_slug | regex_search('^[a-z][a-z0-9-]*$')) %}
+    Must be lowercase, start with a letter, contain only a-z 0-9 and hyphens
+    {% endif %}
+
+npm_scope:
+  type: str
+  help: 'Optional npm scope (e.g. "@myorg") — leave empty for unscoped'
+  default: ""
+
+project_description:
+  type: str
+  help: One-line description
+  default: "A TypeScript service bootstrapped from ai-sourdough-starter"
+
+copyright_holder:
+  type: str
+  help: Name for LICENSE
+  default: "{{ project_name }} contributors"
+
+license:
+  type: str
+  help: License to ship
+  choices: [MIT, Apache-2.0, none]
+  default: MIT
+
+node_version:
+  type: str
+  help: Node.js LTS version
+  choices: ["20", "22"]
+  default: "22"
+
+pnpm_version:
+  type: str
+  help: pnpm version (pinned via packageManager field)
+  default: "9.11.0"
+
+starter_version:
+  type: str
+  default: "0.1.0"
+  when: false
+
+profile:
+  type: str
+  default: "nodejs-ts"
+  when: false
+
+# ----- Post-generation tasks -----
+
+_tasks:
+  - "chmod +x {{ _copier_conf.dst_path }}/.claude/hooks/*.sh"
+  - command: "git init -q && git add ."
+    working_directory: "{{ _copier_conf.dst_path }}"
+    when: "{{ not (_copier_conf.dst_path + '/.git') | exists }}"

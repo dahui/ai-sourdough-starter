@@ -1,0 +1,8 @@
+{
+  "starter_version": "{{ starter_version }}",
+  "profile": "{{ profile }}",
+  "project_name": "{{ project_name }}",
+  "project_slug": "{{ project_slug }}",
+  "python_module": "{{ python_module }}",
+  "python_version": "{{ python_version }}"
+}
