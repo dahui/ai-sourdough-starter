@@ -1,0 +1,42 @@
+# Starter-repo .gitignore. Each rendered project gets its own .gitignore
+# from the profile's template/ tree — this file is for the starter itself.
+
+# Claude Code per-user override (accumulates local paths and permissions;
+# must NOT be committed)
+.claude/settings.local.json
+
+# Cline per-user state (similar concept)
+.cline/
+
+# OS detritus
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment / secrets — never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+id_rsa*
+credentials.json
+credentials.yaml
+credentials.yml
+
+# Ephemeral copier artifacts (in case anyone runs copier with the starter
+# repo as the destination by mistake)
+.copier-answers.yml.tmp
+
+# Python venvs / caches (only relevant if you experiment with copier/etc.
+# installed in a local venv)
+.venv/
+__pycache__/
+*.pyc

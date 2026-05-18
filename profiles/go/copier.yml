@@ -1,26 +1,23 @@
 # Copier configuration for the Go profile.
 #
-# Invoke from anywhere; specify the destination directory:
-#   copier copy --trust -a profiles/go gh:dahui/ai-sourdough-starter ./my-project
+# copier's CLI has no subdirectory selector — pass this profile's path
+# as the template ref. For remote sources, clone first.
 #
-# Or from a local clone of the starter:
-#   copier copy --trust -a profiles/go /path/to/ai-sourdough-starter ./my-project
+# From a local clone of the starter:
+#   copier copy --trust /path/to/ai-sourdough-starter/profiles/go ./my-project
 #
-# Or via cookiecutter for compatibility:
-#   cookiecutter gh:dahui/ai-sourdough-starter --directory=profiles/go
+# From the remote (clone-first pattern):
+#   git clone --depth 1 https://github.com/dahui/ai-sourdough-starter
+#   copier copy --trust ai-sourdough-starter/profiles/go ./my-project
+#
+# The destination directory becomes the project root (flat output;
+# _subdirectory: template strips the inner template/ prefix during render).
 
 _min_copier_version: "9.2.0"
 _answers_file: ".copier-answers.yml"
-# No _templates_suffix: every file in {{ project_slug }}/ gets rendered.
+_subdirectory: "template"
 # Files containing literal Jinja-conflicting syntax (Go text/template,
 # JSON Schema with {{ }}) should wrap that content in {% raw %} blocks.
-
-# Files outside the template tree (questions config, post-gen scripts).
-_exclude:
-  - "copier.yml"
-  - "cookiecutter.json"
-  - "hooks/"
-  - "README.md"
 
 # ----- Questions -----
 

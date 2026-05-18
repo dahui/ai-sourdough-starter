@@ -9,10 +9,8 @@ A profile lives in `profiles/<lang>/` and contains:
 
 ```
 profiles/<lang>/
-├── copier.yml                   # questions, tasks, render config
-├── cookiecutter.json            # cookiecutter-compat translation
-├── hooks/post_gen_project.py    # post-gen for cookiecutter path
-└── {{ project_slug }}/          # template tree (rendered into destination)
+├── copier.yml                   # questions, tasks, _subdirectory: template
+└── template/                    # template tree (rendered into destination)
     ├── AGENTS.md                # profile-flavored rules
     ├── CLAUDE.md                # project-specific stub
     ├── README.md
@@ -21,7 +19,7 @@ profiles/<lang>/
     ├── .editorconfig
     ├── .gitattributes
     ├── .pre-commit-config.yaml
-    ├── .clinerules/             # base + workflows (synced)
+    ├── .clinerules/             # base + workflows (synced from starter root)
     ├── .claude/                 # settings + hooks + agents + commands (synced)
     ├── .github/
     │   ├── dependabot.yml       # base + language-specific ecosystem
@@ -35,6 +33,10 @@ profiles/<lang>/
     └── .starter-manifest.json
 ```
 
+`_subdirectory: template` in `copier.yml` makes copier render the
+contents of `template/` directly into the destination. The destination
+directory becomes the project root — no nested `<dest>/<project_slug>/`.
+
 ## Steps to add a new profile
 
 1. **Copy from an existing profile** (Go is the canonical pattern).
@@ -44,25 +46,22 @@ profiles/<lang>/
    ```
 
 2. **Edit `copier.yml`**:
+   - Keep `_subdirectory: template`
    - Change profile-specific defaults (no `go_version`, add appropriate
      toolchain version variable)
    - Adjust `_tasks` if the language needs different post-gen steps
+     (chmod hooks, git init, etc. — see existing profiles)
    - The `profile` answer should be the directory name
 
-3. **Edit `cookiecutter.json`** to mirror the copier.yml questions.
-
-4. **Update `hooks/post_gen_project.py`** if the post-gen logic differs
-   from Go (e.g., Java's case-sensitive package names, Python's
-   import-path validation).
-
-5. **Replace the source tree** with a Hello-World in the new language:
+3. **Replace the source tree under `template/`** with a Hello-World in
+   the new language:
    - Entry point that prints a greeting
    - One non-trivial function with a clear contract
    - 5-6 tests exercising the happy path + error branches
    - Aim for >85% coverage on the Hello-World so CI is green on day zero
 
-6. **Update `AGENTS.md` §11** to describe the new profile's tooling and
-   conventions. Specifically:
+4. **Update `template/AGENTS.md` §11** to describe the new profile's
+   tooling and conventions. Specifically:
    - Package manager
    - Linter and config file
    - Formatter
@@ -71,7 +70,7 @@ profiles/<lang>/
    - Vulnerability scanner
    - Common anti-patterns specific to the language
 
-7. **Write the CI workflow** (`.github/workflows/ci.yml`):
+5. **Write the CI workflow** (`template/.github/workflows/ci.yml`):
    - Pin the toolchain version
    - Run formatter check
    - Run linter
@@ -79,29 +78,25 @@ profiles/<lang>/
    - Enforce coverage threshold
    - Build
 
-8. **Update `.github/dependabot.yml`** with the language's
+6. **Update `template/.github/dependabot.yml`** with the language's
    `package-ecosystem` value (e.g., `pip`, `maven`, `npm`, `gomod`,
    `cargo`).
 
-9. **Write the coverage gate** (`scripts/check-coverage.sh` or
+7. **Write the coverage gate** (`template/scripts/check-coverage.sh` or
    equivalent). For languages where the test runner has a built-in
    threshold (Python's `pytest-cov`, jacoco), use that and skip the
    script.
 
-10. **Adjust `.gitignore`** with language-specific entries (build
-    directories, compiled artifacts, dependency caches).
+8. **Adjust `template/.gitignore`** with language-specific entries (build
+   directories, compiled artifacts, dependency caches).
 
-11. **Add the profile to `.github/workflows/test-rendering.yml`** matrix:
+9. **Add the profile to `.github/workflows/test-rendering.yml`**: add a
+   new job mirroring the existing profile jobs. Render command points
+   at the new `profiles/<lang>` path; subsequent steps operate directly
+   on `/tmp/render/<lang>` (no inner project-slug directory thanks to
+   `_subdirectory: template`).
 
-    ```yaml
-    strategy:
-      matrix:
-        profile: [go, java, nodejs-ts, python, <your-new-one>]
-    ```
-
-    Add a step that runs the new profile's CI inside the rendered tree.
-
-12. **Add a row** to the README's profile table.
+10. **Add a row** to the README's profile table.
 
 ## Common pitfalls
 
@@ -115,17 +110,31 @@ Mitigation: wrap problematic regions in `{% raw %}...{% endraw %}`. Or
 add the file to `_exclude` in `copier.yml` and copy it verbatim
 post-render.
 
-### Synced files (commands, workflows)
+### Synced files (commands, workflows, hooks, ADR seed, etc.)
 
-`bin/sync-commands` writes into `.claude/commands/` and
-`.clinerules/workflows/`. The Go profile's template tree has copies of
-these files baked in. **Re-run `bin/sync-commands` at the starter level
-after editing canonical commands**, then re-copy into each profile's
-template tree.
+The starter has two sync tools:
 
-This is a known papercut. A future `bin/sync-profiles` will automate
-copying universal files (including the synced commands) into every
-profile's `{{ project_slug }}/` tree.
+- **`bin/sync-commands`** — renders canonical slash commands from
+  `agent-shared/commands/` into `.claude/commands/` and
+  `.clinerules/workflows/` (at the starter root). Run after editing
+  any canonical command body.
+- **`bin/sync-profiles`** — propagates universal files (the `.claude/`
+  tree, `.clinerules/` tree, ADR seed, plan templates, editor configs,
+  LICENSE) from the starter root and `profiles/_common/` into each
+  profile's `template/` tree. Run after editing any of those universal
+  files.
+
+Order matters: run `sync-commands` first (regenerates `.claude/commands/`
+and `.clinerules/workflows/`), then `sync-profiles` (which propagates
+those regenerated files into each profile).
+
+Both tools support `--check` mode for CI. The `test-rendering` workflow's
+`starter-self-checks` job runs both with `--check` on every PR, so drift
+fails CI loudly.
+
+Editing a profile's `template/<universal-file>` directly is wasted work
+— the next `sync-profiles` run overwrites your edits. Make changes at
+the canonical source (starter root or `profiles/_common/`) and re-sync.
 
 ### Hook executability
 
@@ -148,13 +157,14 @@ variable, but each profile overrides with the concrete value).
 ## Testing your new profile locally
 
 ```bash
-# From the starter root
-copier copy --trust -a profiles/<lang> --defaults \
+# From the starter root. The template ref is the profile's path; copier
+# has no CLI subdirectory flag.
+copier copy --trust --defaults \
   --data project_name='Demo' --data project_slug='demo' \
   --data <other-required-data> \
-  . /tmp/demo-<lang>
+  profiles/<lang> /tmp/demo-<lang>
 
-cd /tmp/demo-<lang>
+cd /tmp/demo-<lang>           # destination IS the project root (flat)
 # Run the profile's CI commands manually
 # e.g. for python: uv sync && uv run pytest --cov-fail-under=85
 ```

@@ -31,8 +31,7 @@ jobs:
             --data project_name='Demo Project' \
             --data project_slug='demo-project' \
             --data module_path='github.com/test/demo-project' \
-            -a profiles/go \
-            . /tmp/render/go
+            profiles/go /tmp/render/go
 
       - name: verify executables
         run: |
@@ -82,8 +81,7 @@ jobs:
             --data project_slug='demo-service' \
             --data java_group_id='com.example' \
             --data java_package='com.example.demoservice' \
-            -a profiles/java \
-            . /tmp/render/java
+            profiles/java /tmp/render/java
 
       - name: verify executables
         run: |
@@ -122,8 +120,7 @@ jobs:
           copier copy --trust --defaults \
             --data project_name='Demo Service' \
             --data project_slug='demo-service' \
-            -a profiles/nodejs-ts \
-            . /tmp/render/ts
+            profiles/nodejs-ts /tmp/render/ts
 
       - name: verify executables
         run: |
@@ -170,8 +167,7 @@ jobs:
             --data project_name='Demo Service' \
             --data project_slug='demo-service' \
             --data python_module='demo_service' \
-            -a profiles/python \
-            . /tmp/render/python
+            profiles/python /tmp/render/python
 
       - name: verify executables
         run: |
@@ -204,11 +200,17 @@ jobs:
       - name: verify sync-commands produces no drift
         run: |
           bin/sync-commands
-          if [ -n "$(git status --porcelain .claude/commands .clinerules/workflows)" ]; then
+          # Filter ?? (untracked) entries — only modifications of tracked
+          # files count as drift.
+          DRIFT=$(git status --porcelain .claude/commands .clinerules/workflows | grep -v '^??' || true)
+          if [ -n "$DRIFT" ]; then
             echo "FAIL: sync-commands changed tracked files. Commit the synced output."
             git diff
             exit 1
           fi
+
+      - name: verify sync-profiles produces no drift
+        run: bin/sync-profiles --check
 
       - name: verify hook scripts have executable bit
         run: |

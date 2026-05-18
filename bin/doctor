@@ -109,10 +109,17 @@ fi
 if [[ -d agent-shared/commands ]]; then
   echo "[starter-repo self-checks]"
   check "bin/sync-commands exists and executable" test -x bin/sync-commands
+  check "bin/sync-profiles exists and executable" test -x bin/sync-profiles
   check "agent-shared/commands/ has files" find agent-shared/commands -maxdepth 1 -name '*.md' -print -quit
   if [[ -x bin/sync-commands ]]; then
     if bin/sync-commands >/dev/null 2>&1; then
-      if [[ -z "$(git status --porcelain .claude/commands .clinerules/workflows 2>/dev/null)" ]]; then
+      # Filter out untracked entries (??) — only modifications of tracked
+      # files count as drift. Untracked-but-present files are a "you
+      # haven't committed yet" state, not a "sync produced different
+      # output than committed" state.
+      DRIFT=$(git status --porcelain .claude/commands .clinerules/workflows 2>/dev/null \
+              | grep -v '^??' || true)
+      if [[ -z "$DRIFT" ]]; then
         printf '  \033[32mOK\033[0m   %s\n' "sync-commands produces no drift"
         PASS=$((PASS + 1))
       else
@@ -123,6 +130,16 @@ if [[ -d agent-shared/commands ]]; then
     else
       printf '  \033[31mFAIL\033[0m sync-commands exited non-zero\n'
       FAIL=$((FAIL + 1))
+    fi
+  fi
+  if [[ -x bin/sync-profiles ]]; then
+    if bin/sync-profiles --check >/dev/null 2>&1; then
+      printf '  \033[32mOK\033[0m   %s\n' "sync-profiles produces no drift"
+      PASS=$((PASS + 1))
+    else
+      printf '  \033[31mFAIL\033[0m sync-profiles --check reports drift\n'
+      FAIL=$((FAIL + 1))
+      info "  Run: bin/sync-profiles  (then commit the updated profile files)"
     fi
   fi
   echo ""

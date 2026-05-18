@@ -1,11 +1,6 @@
 _min_copier_version: "9.2.0"
 _answers_file: ".copier-answers.yml"
-
-_exclude:
-  - "copier.yml"
-  - "cookiecutter.json"
-  - "hooks/"
-  - "README.md"
+_subdirectory: "template"
 
 # ----- Questions -----
 

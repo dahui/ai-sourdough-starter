@@ -27,13 +27,15 @@ source of truth).
 ## Quick start
 
 ```bash
-# Render a Go project
-copier copy --trust gh:dahui/ai-sourdough-starter ./my-go-service \
-  --vcs-ref v0.1.0 -a profiles/go
-
-# Or via cookiecutter
-cookiecutter gh:dahui/ai-sourdough-starter --directory=profiles/go
+# Clone the starter, then render the profile you want into a new dir.
+# (copier's CLI doesn't navigate into a subdirectory of a remote
+# template, so a local clone is the simplest entry point.)
+git clone --depth 1 --branch v0.1.0 https://github.com/dahui/ai-sourdough-starter
+copier copy --trust ai-sourdough-starter/profiles/go ./my-go-service
 ```
+
+The destination directory IS the project root — files land directly
+in `./my-go-service/` (no nested subdirectory).
 
 Profiles available at v0.1.0:
 
