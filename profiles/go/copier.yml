@@ -16,6 +16,12 @@
 _min_copier_version: "9.2.0"
 _answers_file: ".copier-answers.yml"
 _subdirectory: "template"
+# Empty suffix = render every file's content (and path) through Jinja.
+# Copier's default is ".jinja", which would skip content-rendering for
+# files without that extension — leaving literal {{ project_slug }} in
+# rendered output. Files containing literal Jinja-conflicting syntax
+# wrap that content in {% raw %} blocks.
+_templates_suffix: ""
 # Files containing literal Jinja-conflicting syntax (Go text/template,
 # JSON Schema with {{ }}) should wrap that content in {% raw %} blocks.
 
@@ -78,6 +84,7 @@ profile:
 _tasks:
   - "chmod +x {{ _copier_conf.dst_path }}/.claude/hooks/*.sh"
   - "chmod +x {{ _copier_conf.dst_path }}/scripts/check-coverage.sh"
-  - command: "git init -q && git add ."
-    working_directory: "{{ _copier_conf.dst_path }}"
-    when: "{{ not (_copier_conf.dst_path + '/.git') | exists }}"
+  # Initialize git only if the destination isn't already inside a repo's
+  # working tree (idempotent for new directories; skipped otherwise so we
+  # don't create a nested repo inside an existing parent).
+  - "cd '{{ _copier_conf.dst_path }}' && (test -d .git || git init -q) && git add -A ."

@@ -1,6 +1,7 @@
 _min_copier_version: "9.2.0"
 _answers_file: ".copier-answers.yml"
 _subdirectory: "template"
+_templates_suffix: ""
 
 # ----- Questions -----
 
@@ -63,6 +64,4 @@ profile:
 
 _tasks:
   - "chmod +x {{ _copier_conf.dst_path }}/.claude/hooks/*.sh"
-  - command: "git init -q && git add ."
-    working_directory: "{{ _copier_conf.dst_path }}"
-    when: "{{ not (_copier_conf.dst_path + '/.git') | exists }}"
+  - "cd '{{ _copier_conf.dst_path }}' && (test -d .git || git init -q) && git add -A ."

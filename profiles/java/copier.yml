@@ -1,6 +1,7 @@
 _min_copier_version: "9.2.0"
 _answers_file: ".copier-answers.yml"
 _subdirectory: "template"
+_templates_suffix: ""
 
 # ----- Questions -----
 
@@ -67,6 +68,17 @@ profile:
 
 _tasks:
   - "chmod +x {{ _copier_conf.dst_path }}/.claude/hooks/*.sh"
-  - command: "git init -q && git add ."
-    working_directory: "{{ _copier_conf.dst_path }}"
-    when: "{{ not (_copier_conf.dst_path + '/.git') | exists }}"
+  # Move source files from the static _pkg/ placeholder into the user's
+  # actual Java package directory. Java packages contain dots that must
+  # become path separators on disk, but copier path-templates each path
+  # segment independently and can't produce a / inside one segment. So
+  # the template ships with a fixed _pkg/ dir and we relocate post-render.
+  - >-
+    cd '{{ _copier_conf.dst_path }}' && pkg='{{ java_package }}' &&
+    pkg_path="$(printf '%s' "$pkg" | tr '.' '/')" &&
+    for tree in main test; do
+      mkdir -p "src/$tree/java/$pkg_path" &&
+      mv "src/$tree/java/_pkg/"* "src/$tree/java/$pkg_path/" &&
+      rmdir "src/$tree/java/_pkg";
+    done
+  - "cd '{{ _copier_conf.dst_path }}' && (test -d .git || git init -q) && git add -A ."

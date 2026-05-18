@@ -22,7 +22,7 @@ jobs:
           python-version: '3.12'
 
       - name: install copier
-        run: pip install copier==9.4.1
+        run: pip install copier==9.15.1
 
       - name: render
         run: |
@@ -71,7 +71,7 @@ jobs:
           python-version: '3.12'
 
       - name: install copier
-        run: pip install copier==9.4.1
+        run: pip install copier==9.15.1
 
       - name: render
         run: |
@@ -112,7 +112,7 @@ jobs:
           python-version: '3.12'
 
       - name: install copier
-        run: pip install copier==9.4.1
+        run: pip install copier==9.15.1
 
       - name: render
         run: |
@@ -158,7 +158,7 @@ jobs:
           python-version: '3.12'
 
       - name: install copier
-        run: pip install copier==9.4.1
+        run: pip install copier==9.15.1
 
       - name: render
         run: |
