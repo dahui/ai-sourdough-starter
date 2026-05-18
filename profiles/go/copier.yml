@@ -1,13 +1,13 @@
 # Copier configuration for the Go profile.
 #
 # Invoke from anywhere; specify the destination directory:
-#   copier copy --trust -a profiles/go gh:USER/ai-sourdough-starter ./my-project
+#   copier copy --trust -a profiles/go gh:dahui/ai-sourdough-starter ./my-project
 #
 # Or from a local clone of the starter:
 #   copier copy --trust -a profiles/go /path/to/ai-sourdough-starter ./my-project
 #
 # Or via cookiecutter for compatibility:
-#   cookiecutter gh:USER/ai-sourdough-starter --directory=profiles/go
+#   cookiecutter gh:dahui/ai-sourdough-starter --directory=profiles/go
 
 _min_copier_version: "9.2.0"
 _answers_file: ".copier-answers.yml"

@@ -5,7 +5,7 @@
 > CI, coverage gates, ADRs, and security defaults — enforced by hooks,
 > not by goodwill.
 
-[![ci](https://github.com/USER/ai-sourdough-starter/actions/workflows/test-rendering.yml/badge.svg)](https://github.com/USER/ai-sourdough-starter/actions/workflows/test-rendering.yml)
+[![ci](https://github.com/dahui/ai-sourdough-starter/actions/workflows/test-rendering.yml/badge.svg)](https://github.com/dahui/ai-sourdough-starter/actions/workflows/test-rendering.yml)
 
 ## Why
 
@@ -28,11 +28,11 @@ source of truth).
 
 ```bash
 # Render a Go project
-copier copy --trust gh:USER/ai-sourdough-starter ./my-go-service \
+copier copy --trust gh:dahui/ai-sourdough-starter ./my-go-service \
   --vcs-ref v0.1.0 -a profiles/go
 
 # Or via cookiecutter
-cookiecutter gh:USER/ai-sourdough-starter --directory=profiles/go
+cookiecutter gh:dahui/ai-sourdough-starter --directory=profiles/go
 ```
 
 Profiles available at v0.1.0:
@@ -104,7 +104,7 @@ improvements with a 3-way merge against your customizations.
 ## Working on the starter itself
 
 ```bash
-git clone https://github.com/USER/ai-sourdough-starter
+git clone https://github.com/dahui/ai-sourdough-starter
 cd ai-sourdough-starter
 
 # Regenerate synced slash commands
